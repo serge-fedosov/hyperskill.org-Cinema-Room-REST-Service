@@ -297,6 +297,227 @@ files:
         };
     }
   learner_created: false
-feedback_link: https://hyperskill.org/projects/189/stages/947/implement#comment
-status: Unchecked
-record: -1
+- name: src/cinema/Seat.java
+  visible: true
+  text: |
+    package cinema;
+
+    public class Seat extends SeatWithoutPrice {
+
+        private int price;
+
+        public Seat(int row, int column, int price) {
+            super(row, column);
+            this.price = price;
+        }
+
+        public int getPrice() {
+            return price;
+        }
+
+        public void setPrice(int price) {
+            this.price = price;
+        }
+    }
+  learner_created: true
+- name: src/cinema/SeatWithoutPrice.java
+  visible: true
+  text: |
+    package cinema;
+
+    public class SeatWithoutPrice {
+        private int row;
+        private int column;
+
+        public SeatWithoutPrice() {
+        }
+
+        public SeatWithoutPrice(int row, int column) {
+            this.row = row;
+            this.column = column;
+        }
+
+        public int getRow() {
+            return row;
+        }
+
+        public void setRow(int row) {
+            this.row = row;
+        }
+
+        public int getColumn() {
+            return column;
+        }
+
+        public void setColumn(int column) {
+            this.column = column;
+        }
+
+    }
+  learner_created: true
+- name: src/cinema/TicketException.java
+  visible: true
+  text: |-
+    package cinema;
+
+    import org.springframework.http.HttpStatus;
+    import org.springframework.web.bind.annotation.ResponseStatus;
+
+    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    public class TicketException extends RuntimeException {
+
+        public TicketException(String cause) {
+            super(cause);
+        }
+    }
+  learner_created: true
+- name: src/cinema/MovieTheatreController.java
+  visible: true
+  text: |
+    package cinema;
+
+    import org.springframework.http.HttpStatus;
+    import org.springframework.http.ResponseEntity;
+    import org.springframework.web.bind.annotation.*;
+    import org.springframework.web.context.request.WebRequest;
+    import org.springframework.web.server.ResponseStatusException;
+
+    import java.util.Map;
+
+    @RestController
+    public class MovieTheatreController {
+
+        private MovieTheatre seats = new MovieTheatre();
+
+        @GetMapping("/seats")
+        public MovieTheatre getSeats() {
+            return seats;
+        }
+
+        @PostMapping("/purchase")
+        public Seat purchase(@RequestBody SeatWithoutPrice seat) {
+
+            int row = seat.getRow();
+            int column = seat.getColumn();
+
+            int totalRows = seats.getTotalRows();
+            int totalColumns = seats.getTotalColumns();
+
+            if (row < 1 || row > totalRows || column < 1 || column > totalColumns) {
+                throw new TicketException("The number of a row or a column is out of bounds!");
+            } else if (!seats.isAvailable(row, column)) {
+                throw new TicketException("The ticket has been already purchased!");
+            } else {
+                return seats.sell(row, column);
+            }
+        }
+
+        @ExceptionHandler(TicketException.class)
+        public ResponseEntity<CustomErrorMessage> handleTicketException(TicketException e, WebRequest request) {
+
+            CustomErrorMessage body = new CustomErrorMessage(e.getLocalizedMessage());
+            return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        }
+    }
+  learner_created: true
+- name: src/cinema/CustomErrorMessage.java
+  visible: true
+  text: |-
+    package cinema;
+
+    public class CustomErrorMessage  {
+        private String error;
+
+        public CustomErrorMessage (String error) {
+            this.error = error;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
+        }
+    }
+  learner_created: true
+- name: src/cinema/MovieTheatre.java
+  visible: true
+  text: |
+    package cinema;
+
+    import com.fasterxml.jackson.annotation.JsonProperty;
+
+    import java.util.ArrayList;
+    import java.util.List;
+
+    public class MovieTheatre {
+
+        @JsonProperty("total_rows")
+        private int totalRows = 9;
+        @JsonProperty("total_columns")
+        private int totalColumns = 9;
+        @JsonProperty("available_seats")
+        private final List<Seat> availableSeats = new ArrayList<>();
+
+        public MovieTheatre() {
+            for (int i = 0; i < totalRows; i++) {
+                for (int j = 0; j < totalColumns; j++) {
+                    availableSeats.add(new Seat(i + 1, j + 1, i <= 3 ? 10 : 8));
+                }
+            }
+        }
+
+        public int getTotalRows() {
+            return totalRows;
+        }
+
+        public void setTotalRows(int totalRows) {
+            this.totalRows = totalRows;
+        }
+
+        public int getTotalColumns() {
+            return totalColumns;
+        }
+
+        public void setTotalColumns(int totalColumns) {
+            this.totalColumns = totalColumns;
+        }
+
+        public List<Seat> getAvailableSeats() {
+            return availableSeats;
+        }
+
+        public Seat sell(int row, int column) {
+            for (int i = 0; i < availableSeats.size(); i++) {
+                Seat seat = availableSeats.get(i);
+                if (seat.getRow() == row && seat.getColumn() == column) {
+                    availableSeats.remove(i);
+                    return seat;
+                }
+            }
+
+            return new Seat(0, 0, 0);
+        }
+
+        public boolean isAvailable(int row, int column) {
+            for (Seat availableSeat : availableSeats) {
+                if (availableSeat.getRow() == row && availableSeat.getColumn() == column) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+    }
+  learner_created: true
+- name: src/cinema/TicketWithToken.java
+  visible: true
+  learner_created: true
+feedback_link: https://hyperskill.org/learn/step/13377#comment
+status: Solved
+feedback:
+  message: Congratulations!
+  time: Tue, 16 Aug 2022 14:02:08 UTC
+record: 3
